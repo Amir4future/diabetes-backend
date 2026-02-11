@@ -60,9 +60,16 @@ def predict():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+
 # ==========================================
 # 3. نقطة الشات الذكي (Chat Logic)
 # ==========================================
+
+@app.route('/')
+def home():
+    return "✅ Server is Running! Diabetes AI API is ready."
+
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -112,3 +119,4 @@ if __name__ == '__main__':
     # تشغيل السيرفر محلياً
 
     app.run(host='0.0.0.0', port=5000, debug=True)
+
