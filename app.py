@@ -12,8 +12,9 @@ app = Flask(__name__)
 model = joblib.load('diabetes_model_compressed.pkl')
 
 # إعداد مفتاح Gemini
-GENAI_API_KEY = "AIzaSyBLtcrmMJhA4uC7rVsDrr1iGlvmNcFevko"
-genai.configure(api_key=GENAI_API_KEY)
+
+# بدلاً من وضع المفتاح مباشرة، نقرأه من متغيرات النظام
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 chat_model = genai.GenerativeModel('gemini-flash-latest')
 
 # خرائط التحويل (لأن الموديل لا يفهم النصوص)
@@ -109,4 +110,5 @@ def chat():
 
 if __name__ == '__main__':
     # تشغيل السيرفر محلياً
+
     app.run(host='0.0.0.0', port=5000, debug=True)
