@@ -8,12 +8,10 @@ app = Flask(__name__)
 # ==========================================
 # 1. التجهيز (Load Brain & Voice)
 # ==========================================
-# تحميل موديل الذكاء الاصطناعي (تأكد أن الملف بجانب الكود)
+# تحميل موديل الذكاء الاصطناعي
 model = joblib.load('diabetes_model_compressed.pkl')
 
-# إعداد مفتاح Gemini
-
-# بدلاً من وضع المفتاح مباشرة، نقرأه من متغيرات النظام
+# إعداد مفتاح Gemini من متغيرات النظام (آمن 100%)
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 chat_model = genai.GenerativeModel('gemini-flash-latest')
 
@@ -32,17 +30,16 @@ def predict():
     try:
         data = request.json
         
-        # تجميع الـ 8 متغيرات الضرورية للموديل
-        # المنطق: التطبيق يجمعها ويرسلها دفعة واحدة
+        # تجميع الـ 8 متغيرات مع وضع "قيم افتراضية" للحماية من الكراش
         features = [
-            gender_map.get(data.get('gender'), 0), # الجنس
-            float(data.get('age')),                # العمر (محسوب في التطبيق)
-            int(data.get('hypertension')),         # ضغط (0 أو 1)
-            int(data.get('heart_disease')),        # قلب (0 أو 1)
-            smoking_map.get(data.get('smoking_history'), 0), # التدخين
-            float(data.get('bmi')),                # كتلة الجسم
-            float(data.get('hba1c')),              # التراكمي
-            float(data.get('glucose'))             # السكر العشوائي
+            gender_map.get(data.get('gender', 'Female'), 0),         # 1. الجنس
+            float(data.get('age', 0.0)),                             # 2. العمر
+            int(data.get('hypertension', 0)),                        # 3. ضغط
+            int(data.get('heart_disease', 0)),                       # 4. قلب
+            smoking_map.get(data.get('smoking_history', 'No Info'), 0), # 5. التدخين
+            float(data.get('bmi', 0.0)),                             # 6. كتلة الجسم
+            float(data.get('HbA1c_level', 0.0)),                     # 7. التراكمي
+            float(data.get('blood_glucose_level', 0.0))              # 8. السكر العشوائي
         ]
         
         # سؤال الموديل
@@ -64,7 +61,6 @@ def predict():
 # ==========================================
 # 3. نقطة الشات الذكي (Chat Logic)
 # ==========================================
-
 @app.route('/')
 def home():
     return "✅ Server is Running! Diabetes AI API is ready."
@@ -74,20 +70,16 @@ def home():
 def chat():
     try:
         data = request.json
-        user_msg = data.get('message')
+        user_msg = data.get('message', '')
         
-        # استقبال سياق المريض (Context)
-        # المنطق: نستقبل أي بيانات متوفرة عن المريض
+        # استقبال سياق المريض
         ctx = data.get('context', {})
-        
-        # استخراج البيانات (مع قيم افتراضية إذا كانت ناقصة)
         name = ctx.get('name', 'المستخدم')
         glucose = ctx.get('current_glucose', 'غير متوفر')
         last_meal = ctx.get('last_meal', 'غير معروف')
         diab_type = ctx.get('diabetes_type', 'غير محدد')
 
-
-        # هندسة الملقن (System Prompt) - نسخة ثنائية اللغة
+        # هندسة الملقن
         system_instruction = f"""
         Act as a smart and empathetic diabetes doctor.
         
@@ -115,8 +107,7 @@ def chat():
     except Exception as e:
         return jsonify({"reply": "عذراً، حدث خطأ في النظام الطبي.", "error": str(e)})
 
+
 if __name__ == '__main__':
     # تشغيل السيرفر محلياً
-
     app.run(host='0.0.0.0', port=5000, debug=True)
-
